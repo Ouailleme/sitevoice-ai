@@ -31,18 +31,12 @@ class AudioService {
   }
 
   Future<bool> requestMicrophonePermission() async {
-    return await _recordingService.requestPermission();
+    return await _recordingService.requestMicrophonePermission();
   }
 
   Future<void> startRecording() async {
     try {
-      final success = await _recordingService.startRecording();
-      if (!success) {
-        throw AudioException(
-          message: 'Impossible de démarrer l\'enregistrement',
-          code: 'RECORDING_START_FAILED',
-        );
-      }
+      await _recordingService.startRecording();
 
       _isRecording = true;
       _isPaused = false;

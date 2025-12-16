@@ -46,10 +46,9 @@ dependencies:
   supabase_flutter: ^2.3.4
   
   # Audio Recording
-  # flutter_sound: ^9.10.4  # Temporairement désactivé - problème jlink.exe
+  flutter_sound: ^9.10.4
   permission_handler: ^11.3.1
   path_provider: ^2.1.4
-  # ALTERNATIVE : audio_waveforms ^1.0.5 (plus léger, pas de problème jlink)
   
   # GPS / Localisation
   geolocator: ^11.0.0

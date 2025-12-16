@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
-import '../../core/constants/app_constants.dart';
+import '../../core/config/env_config.dart';
 import '../../core/errors/app_exception.dart';
+import 'telemetry_service.dart';
 
 /// Service pour interagir avec l'API OpenAI
 /// Gère la transcription (Whisper) et l'extraction de données (GPT-4)
@@ -12,7 +13,7 @@ class OpenAIService {
   static const String _chatApiUrl =
       'https://api.openai.com/v1/chat/completions';
 
-  final String _apiKey = AppConstants.openaiApiKey;
+  final String _apiKey = EnvConfig.openAiApiKey;
 
   /// Transcrire un fichier audio en texte avec Whisper
   ///
@@ -58,21 +59,26 @@ class OpenAIService {
           );
         }
 
+        TelemetryService.logInfo('Transcription réussie: ${text.length} caractères');
         return text;
       } else {
         final errorJson = jsonDecode(responseData);
+        final errorMsg = 'Erreur Whisper: ${errorJson['error']?['message'] ?? responseData}';
+        TelemetryService.logError('Transcription failed', errorMsg);
         throw NetworkException(
-          message: 'Erreur Whisper: ${errorJson['error']?['message'] ?? responseData}',
+          message: errorMsg,
           code: 'WHISPER_API_ERROR',
         );
       }
-    } on SocketException {
+    } on SocketException catch (e, stack) {
+      TelemetryService.logError('No internet for transcription', e, stack);
       throw NetworkException(
         message: 'Pas de connexion internet',
         code: 'NO_INTERNET',
       );
-    } catch (e) {
+    } catch (e, stack) {
       if (e is AppException) rethrow;
+      TelemetryService.logError('Transcription error', e, stack);
       throw ServerException(
         message: 'Erreur transcription: $e',
         code: 'TRANSCRIPTION_ERROR',
@@ -145,21 +151,28 @@ class OpenAIService {
         // Validation basique
         _validateExtractedData(extractedData);
 
+        final confiance = extractedData['confiance'] ?? 0;
+        TelemetryService.logInfo('Extraction réussie (confiance: $confiance%)');
+        
         return extractedData;
       } else {
         final errorJson = jsonDecode(response.body);
+        final errorMsg = 'Erreur GPT-4: ${errorJson['error']?['message'] ?? response.body}';
+        TelemetryService.logError('GPT extraction failed', errorMsg);
         throw NetworkException(
-          message: 'Erreur GPT-4: ${errorJson['error']?['message'] ?? response.body}',
+          message: errorMsg,
           code: 'GPT_API_ERROR',
         );
       }
-    } on SocketException {
+    } on SocketException catch (e, stack) {
+      TelemetryService.logError('No internet for extraction', e, stack);
       throw NetworkException(
         message: 'Pas de connexion internet',
         code: 'NO_INTERNET',
       );
-    } catch (e) {
+    } catch (e, stack) {
       if (e is AppException) rethrow;
+      TelemetryService.logError('Extraction error', e, stack);
       throw ServerException(
         message: 'Erreur extraction: $e',
         code: 'EXTRACTION_ERROR',
