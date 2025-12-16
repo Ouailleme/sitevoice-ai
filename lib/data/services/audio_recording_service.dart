@@ -1,17 +1,19 @@
 import 'dart:async';
 import 'dart:io';
-import 'package:record/record.dart';
+import 'package:flutter_sound/flutter_sound.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:path_provider/path_provider.dart';
 import '../../core/errors/app_exception.dart';
 
 /// Service pour gérer l'enregistrement audio
-/// Utilise le package `record` avec gestion complète des permissions
+/// Utilise le package `flutter_sound` avec gestion complète des permissions
 class AudioRecordingService {
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  final FlutterSoundRecorder _recorder = FlutterSoundRecorder();
+  bool _isRecorderInitialized = false;
   String? _currentRecordingPath;
   Timer? _amplitudeTimer;
   final _amplitudeController = StreamController<double>.broadcast();
+  StreamSubscription? _recorderSubscription;
 
   /// Stream pour l'amplitude en temps réel (pour animation)
   Stream<double> get amplitudeStream => _amplitudeController.stream;
@@ -28,12 +30,32 @@ class AudioRecordingService {
     return status.isGranted;
   }
 
+  /// Initialiser le recorder
+  Future<void> _initRecorder() async {
+    if (_isRecorderInitialized) return;
+    
+    try {
+      await _recorder.openRecorder();
+      _isRecorderInitialized = true;
+    } catch (e) {
+      throw AudioException(
+        message: 'Erreur initialisation recorder: $e',
+        code: 'RECORDER_INIT_ERROR',
+      );
+    }
+  }
+
   /// Démarrer l'enregistrement audio
   /// 
   /// Retourne `true` si l'enregistrement a démarré avec succès
-  /// Lance une [AppException] en cas d'erreur
+  /// Lance une [AudioException] en cas d'erreur
   Future<bool> startRecording() async {
     try {
+      // Initialiser le recorder si nécessaire
+      if (!_isRecorderInitialized) {
+        await _initRecorder();
+      }
+
       // Vérifier la permission
       if (!await hasPermission()) {
         final granted = await requestPermission();
@@ -50,27 +72,24 @@ class AudioRecordingService {
       final timestamp = DateTime.now().millisecondsSinceEpoch;
       _currentRecordingPath = '${directory.path}/recording_$timestamp.m4a';
 
-      // Vérifier que le recorder est disponible
-      if (!await _audioRecorder.hasPermission()) {
-        throw AudioException(
-          message: 'Permission microphone non disponible',
-          code: 'PERMISSION_NOT_AVAILABLE',
-        );
-      }
-
       // Démarrer l'enregistrement
-      await _audioRecorder.start(
-        const RecordConfig(
-          encoder: AudioEncoder.aacLc,
-          bitRate: 128000,
-          sampleRate: 44100,
-          numChannels: 1,
-        ),
-        path: _currentRecordingPath!,
+      await _recorder.startRecorder(
+        toFile: _currentRecordingPath,
+        codec: Codec.aacMP4,
+        bitRate: 128000,
+        sampleRate: 44100,
+        numChannels: 1,
       );
 
-      // Démarrer le monitoring de l'amplitude
-      _startAmplitudeMonitoring();
+      // Écouter les données d'amplitude
+      _recorderSubscription = _recorder.onProgress!.listen((event) {
+        if (event.decibels != null) {
+          // Convertir les décibels en amplitude normalisée (0.0 - 1.0)
+          // Les décibels sont généralement entre -160 et 0
+          final normalizedAmplitude = (event.decibels! + 160) / 160;
+          _amplitudeController.add(normalizedAmplitude.clamp(0.0, 1.0));
+        }
+      });
 
       return true;
     } catch (e) {
@@ -87,9 +106,13 @@ class AudioRecordingService {
   /// Retourne `null` si aucun enregistrement n'est en cours
   Future<String?> stopRecording() async {
     try {
-      _stopAmplitudeMonitoring();
+      await _recorderSubscription?.cancel();
+      _recorderSubscription = null;
+      _amplitudeController.add(0.0);
       
-      final path = await _audioRecorder.stop();
+      await _recorder.stopRecorder();
+      
+      final path = _currentRecordingPath;
       
       if (path != null) {
         final file = File(path);
@@ -116,8 +139,10 @@ class AudioRecordingService {
   /// Mettre en pause l'enregistrement
   Future<void> pauseRecording() async {
     try {
-      await _audioRecorder.pause();
-      _stopAmplitudeMonitoring();
+      await _recorder.pauseRecorder();
+      await _recorderSubscription?.cancel();
+      _recorderSubscription = null;
+      _amplitudeController.add(0.0);
     } catch (e) {
       throw AudioException(
         message: 'Erreur lors de la mise en pause: $e',
@@ -129,8 +154,15 @@ class AudioRecordingService {
   /// Reprendre l'enregistrement
   Future<void> resumeRecording() async {
     try {
-      await _audioRecorder.resume();
-      _startAmplitudeMonitoring();
+      await _recorder.resumeRecorder();
+      
+      // Réactiver l'écoute de l'amplitude
+      _recorderSubscription = _recorder.onProgress!.listen((event) {
+        if (event.decibels != null) {
+          final normalizedAmplitude = (event.decibels! + 160) / 160;
+          _amplitudeController.add(normalizedAmplitude.clamp(0.0, 1.0));
+        }
+      });
     } catch (e) {
       throw AudioException(
         message: 'Erreur lors de la reprise: $e',
@@ -142,7 +174,7 @@ class AudioRecordingService {
   /// Vérifier si un enregistrement est en cours
   Future<bool> isRecording() async {
     try {
-      return await _audioRecorder.isRecording();
+      return _recorder.isRecording;
     } catch (e) {
       return false;
     }
@@ -151,7 +183,7 @@ class AudioRecordingService {
   /// Vérifier si l'enregistrement est en pause
   Future<bool> isPaused() async {
     try {
-      return await _audioRecorder.isPaused();
+      return _recorder.isPaused;
     } catch (e) {
       return false;
     }
@@ -160,8 +192,11 @@ class AudioRecordingService {
   /// Annuler l'enregistrement et supprimer le fichier
   Future<void> cancelRecording() async {
     try {
-      _stopAmplitudeMonitoring();
-      await _audioRecorder.stop();
+      await _recorderSubscription?.cancel();
+      _recorderSubscription = null;
+      _amplitudeController.add(0.0);
+      
+      await _recorder.stopRecorder();
 
       // Supprimer le fichier si il existe
       if (_currentRecordingPath != null) {
@@ -179,33 +214,16 @@ class AudioRecordingService {
     }
   }
 
-  /// Démarrer le monitoring de l'amplitude pour l'animation
-  void _startAmplitudeMonitoring() {
-    _amplitudeTimer = Timer.periodic(
-      const Duration(milliseconds: 100),
-      (timer) async {
-        try {
-          final amplitude = await _audioRecorder.getAmplitude();
-          _amplitudeController.add(amplitude.current);
-        } catch (e) {
-          // Ignorer les erreurs de lecture d'amplitude
-        }
-      },
-    );
-  }
-
-  /// Arrêter le monitoring de l'amplitude
-  void _stopAmplitudeMonitoring() {
-    _amplitudeTimer?.cancel();
-    _amplitudeTimer = null;
-    _amplitudeController.add(0.0);
-  }
-
   /// Nettoyer les ressources
-  void dispose() {
-    _stopAmplitudeMonitoring();
+  void dispose() async {
+    await _recorderSubscription?.cancel();
+    _recorderSubscription = null;
     _amplitudeController.close();
-    _audioRecorder.dispose();
+    
+    if (_isRecorderInitialized) {
+      await _recorder.closeRecorder();
+      _isRecorderInitialized = false;
+    }
   }
 }
 
