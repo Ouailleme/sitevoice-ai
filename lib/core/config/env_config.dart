@@ -26,10 +26,13 @@ class EnvConfig {
     defaultValue: 2000,
   );
 
-  static const double gptTemperature = double.fromEnvironment(
+  // Note: double.fromEnvironment n'existe pas, utiliser String et parser
+  static const String _gptTemperatureStr = String.fromEnvironment(
     'GPT_TEMPERATURE',
-    defaultValue: 0.3,
+    defaultValue: '0.3',
   );
+  
+  static double get gptTemperature => double.tryParse(_gptTemperatureStr) ?? 0.3;
 
   // Supabase (peut être optionnel si déjà configuré dans Supabase.initialize)
   static const String supabaseUrl = String.fromEnvironment(
