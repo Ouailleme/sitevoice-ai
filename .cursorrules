@@ -1,0 +1,123 @@
+# CONTEXTE PROJET : SiteVoice AI
+
+## DESCRIPTION
+App mobile Flutter pour techniciens BTP. Enregistrement vocal -> Transcription -> Extraction Données (JSON) -> Facturation.
+
+## STACK
+- Flutter (Dernière version stable)
+- Supabase (Postgres, Edge Functions, Storage, Auth)
+- OpenAI API (Whisper, GPT-4o)
+- Provider (State Management)
+- Hive (Local Storage Offline-First)
+
+## RÈGLES DE CODE STRICTES
+
+### 1. Offline-First (PRIORITÉ ABSOLUE)
+- Ne JAMAIS supposer que le réseau est disponible
+- Toujours sauvegarder en local (Hive) avant d'envoyer au serveur
+- Implémenter une queue de synchronisation pour les opérations en attente
+- L'app doit être 100% fonctionnelle sans connexion internet
+
+### 2. Robustesse & Error Handling
+- Utiliser des try/catch PARTOUT
+- Logger toutes les erreurs dans un service de Telemetry
+- Jamais de crash silencieux
+- Afficher des messages d'erreur clairs et actionnables pour l'utilisateur
+
+### 3. Sécurité IA (Anti-Hallucination)
+- Dans les prompts GPT, TOUJOURS fournir le contexte (liste clients/produits existants)
+- Utiliser le JSON Mode d'OpenAI pour des sorties strictement structurées
+- Implémenter un score de confiance pour chaque extraction
+- Toujours permettre la validation humaine des données extraites
+
+### 4. Architecture (MVVM Strict)
+- **View** : UI pure, pas de logique métier
+- **ViewModel** : Logique de présentation, gestion d'état
+- **Model** : Structures de données
+- **Repository** : Accès aux données (API + Local)
+- **Services** : Fonctionnalités transversales (Auth, Audio, Sync, etc.)
+
+### 5. Style de Code
+- Code 100% typé (pas de dynamic sauf exception justifiée)
+- Variables et fonctions explicites (pas d'abréviations cryptiques)
+- Commentaires en Français pour la logique métier complexe
+- Utiliser des const partout où possible pour les performances
+- Nommage : snake_case pour fichiers, camelCase pour variables, PascalCase pour classes
+
+### 6. Performance
+- Lazy loading systématique
+- Pagination pour les listes longues
+- Compression des fichiers audio avant upload
+- Cache intelligent avec invalidation
+
+### 7. Tests
+- Tests unitaires pour la logique métier critique
+- Tests d'intégration pour les flows principaux
+- Mock des services externes (Supabase, OpenAI)
+
+### 8. Sécurité
+- Jamais de secrets dans le code (utiliser .env)
+- Validation côté serveur ET client
+- RLS (Row Level Security) activé sur toutes les tables Supabase
+- Permissions mobiles demandées au bon moment (JIT - Just In Time)
+
+## STRUCTURE DE PROJET
+
+```
+lib/
+├── core/
+│   ├── constants/          # Constantes globales
+│   ├── errors/            # Custom exceptions
+│   ├── network/           # HTTP client, interceptors
+│   └── utils/             # Helpers, extensions
+├── data/
+│   ├── models/            # Data models (JSON serializable)
+│   ├── repositories/      # Accès données (API + Local)
+│   └── services/          # Services techniques (Auth, Audio, Sync)
+├── domain/
+│   ├── entities/          # Business entities
+│   └── use_cases/         # Business logic
+├── presentation/
+│   ├── screens/           # Pages de l'app
+│   ├── widgets/           # Composants réutilisables
+│   └── view_models/       # ViewModels (Provider)
+└── main.dart
+```
+
+## BONNES PRATIQUES FLUTTER
+
+- Utiliser `Key` pour les widgets dans les listes
+- Éviter les setState() multiples, préférer Provider
+- Utiliser `const` constructors autant que possible
+- Séparer les widgets complexes en sous-widgets
+- Utiliser `ListView.builder` au lieu de `ListView` pour les longues listes
+
+## WORKFLOW GIT
+
+- Commits atomiques et descriptifs en français
+- Format : `type(scope): message` 
+  - Exemples : `feat(audio): ajout enregistrement`, `fix(sync): correction upload`
+
+## PRIORITÉS BUSINESS
+
+1. **Fiabilité de l'extraction IA** : Si l'IA se trompe, l'utilisateur perd confiance
+2. **Simplicité UX** : Un technicien doit pouvoir l'utiliser sans formation
+3. **Performance Offline** : L'app doit fonctionner dans une cave sans réseau
+4. **Rapidité** : De l'enregistrement à la validation < 30 secondes
+
+## APIS & INTÉGRATIONS
+
+### Supabase
+- Auth : Email/Password + Social (Google)
+- Database : PostgreSQL avec RLS
+- Storage : Fichiers audio (.m4a)
+- Edge Functions : TypeScript/Deno
+
+### OpenAI
+- Whisper API : Transcription (endpoint: /v1/audio/transcriptions)
+- GPT-4o : Extraction structurée (JSON Mode activé)
+
+### Stripe
+- Subscription : Plan unique à 29€/mois par technicien
+- Webhooks : Gérer les événements (abonnement actif/expiré)
+

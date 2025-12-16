@@ -1,0 +1,151 @@
+{
+  "@@locale": "en",
+  
+  "app_name": "SiteVoice AI",
+  "tagline": "Stop typing. Speak.",
+  "ok": "OK",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "edit": "Edit",
+  "close": "Close",
+  "back": "Back",
+  "next": "Next",
+  "skip": "Skip",
+  "finish": "Finish",
+  "loading": "Loading...",
+  "error": "Error",
+  "success": "Success",
+  "warning": "Warning",
+  "confirm": "Confirm",
+  "login": "Login",
+  "signup": "Sign Up",
+  "logout": "Logout",
+  "email": "Email",
+  "password": "Password",
+  "forgot_password": "Forgot password?",
+  "reset_password": "Reset password",
+  "email_required": "Email is required",
+  "password_required": "Password is required",
+  "invalid_email": "Invalid email address",
+  "weak_password": "Password too weak",
+  "welcome_title": "Welcome to\nSiteVoice AI",
+  "welcome_subtitle": "The smart voice assistant\nfor your field reports",
+  "what_is_your_name": "What's your name?",
+  "your_first_name": "Your first name",
+  "import_contacts_title": "Quick Import",
+  "import_contacts_subtitle": "Import your client contacts\nto get started quickly",
+  "import_contacts_button": "Import my contacts",
+  "import_contacts_optional": "Optional - You can do this later",
+  "contacts_imported": "{count} contacts imported",
+  "@contacts_imported": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "referral_code_title": "Referral Code",
+  "referral_code_subtitle": "Got invited by a colleague?",
+  "referral_code_description": "Enter their referral code\nto get 1 FREE MONTH",
+  "referral_code_placeholder": "Ex: JOHN-8392",
+  "referral_code_benefit": "You and your colleague get 1 free month",
+  "language_selection_title": "Language",
+  "language_selection_subtitle": "Choose your preferred language",
+  "start_recording": "Start Recording",
+  "stop_recording": "Stop",
+  "pause_recording": "Pause",
+  "resume_recording": "Resume",
+  "recording_duration": "Duration: {duration}",
+  "@recording_duration": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "recording_limit_warning": "Limit: 10 minutes",
+  "recording_saved": "Recording saved successfully",
+  "recording_error": "Recording error",
+  "jobs": "Jobs",
+  "new_job": "New Job",
+  "job_details": "Job Details",
+  "client": "Client",
+  "description": "Description",
+  "status": "Status",
+  "date": "Date",
+  "total_amount": "Total Amount",
+  "status_pending": "Pending",
+  "status_processing": "Processing",
+  "status_completed": "Completed",
+  "status_failed": "Failed",
+  "dashboard": "Dashboard",
+  "overview": "Overview",
+  "map": "Map",
+  "invoicing": "Invoicing",
+  "team": "Team",
+  "settings": "Settings",
+  "revenue_this_month": "Revenue this month",
+  "interventions": "Interventions",
+  "average_time": "Average time",
+  "satisfaction": "Satisfaction",
+  "recent_activity": "Recent activity",
+  "free_limit_reached": "Free limit reached!",
+  "free_limit_message": "You've used your 3 trial reports.\nUpgrade to Premium to keep saving time!",
+  "upgrade_to_premium": "Upgrade to Premium",
+  "price_per_month": "{price}/month",
+  "@price_per_month": {
+    "placeholders": {
+      "price": {
+        "type": "String"
+      }
+    }
+  },
+  "no_commitment": "No commitment",
+  "later": "Later",
+  "unlimited_reports": "Unlimited reports",
+  "ai_transcription": "AI Transcription",
+  "automatic_invoicing": "Automatic invoicing",
+  "realtime_sync": "Realtime sync",
+  "priority_support": "Priority support",
+  "not_ready_yet": "Not ready yet?",
+  "refer_friend_earn_month": "Refer a colleague → 1 free month for both!",
+  "my_referral_code": "My referral code",
+  "share_code": "Share code",
+  "referral_stats": "Referral stats",
+  "total_referrals": "Total referrals",
+  "pending_referrals": "Pending",
+  "converted_referrals": "Converted",
+  "months_earned": "Months earned",
+  "invite_colleague": "Invite a colleague",
+  "profile": "Profile",
+  "language": "Language",
+  "theme": "Theme",
+  "notifications": "Notifications",
+  "privacy": "Privacy",
+  "about": "About",
+  "version": "Version",
+  "network_error": "Network error. Please check your connection.",
+  "permission_denied": "Permission denied",
+  "microphone_permission_required": "Microphone permission is required to record",
+  "location_permission_required": "Location permission is required",
+  "contacts_permission_required": "Contacts permission is required",
+  "unknown_error": "An unknown error occurred",
+  "saved_successfully": "Saved successfully",
+  "deleted_successfully": "Deleted successfully",
+  "updated_successfully": "Updated successfully",
+  "referral_code_applied": "Referral code validated! 1 month offered",
+  "currency_symbol": "$",
+  "currency_format": "{symbol}{amount}",
+  "@currency_format": {
+    "placeholders": {
+      "symbol": {
+        "type": "String"
+      },
+      "amount": {
+        "type": "String"
+      }
+    }
+  }
+}
+

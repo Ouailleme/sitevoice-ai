@@ -1,0 +1,133 @@
+CONTEXTE PROJET : SiteVoice AI (Version 3.0 - Hybrid Ecosystem)
+
+DESCRIPTION
+
+Écosystème SaaS B2B complet.
+
+Mobile (Flutter) : Outil de capture Terrain (Offline-first, Audio, GPS).
+
+Web (Next.js) : Tour de Contrôle Manager (Admin, Billing, SEO, Analytics).
+
+Backend (Supabase) : Cerveau central et Source de Vérité.
+
+🏗️ STACK TECHNIQUE HYBRIDE
+
+📱 MOBILE (Terrain)
+
+Tech : Flutter (Stable).
+
+Rôle : Capture de données haute fidélité.
+
+Architecture : MVVM + Provider.
+
+Libs Clés : record (Audio), geolocator (GPS), hive (Offline), url_launcher (Redirection Web).
+
+💻 WEB (Dashboard & Acquisition)
+
+Tech : Next.js 14 (App Router) + TypeScript.
+
+Rôle : Administration, Data Viz, Facturation, Landing Pages (SEO).
+
+UI Libs : Tailwind CSS, shadcn/ui, Lucide Icons, Recharts.
+
+Payment : Stripe Checkout & Customer Portal (Natif).
+
+☁️ BACKEND (Shared Brain)
+
+Supabase : Postgres, Auth, Storage, Realtime.
+
+Logic : Edge Functions (Deno) pour tout traitement métier partagé (IA, Calculs complexes).
+
+⚠️ RÈGLES D'ARCHITECTURE (DO OR DIE)
+
+1. Séparation des Responsabilités (Separation of Concerns)
+
+Mobile (Flutter) : NE FAIT PAS d'admin (pas de modif de factures, pas de gestion d'équipe). Il ne sert qu'à créer des rapports.
+
+Web (Next.js) : NE FAIT PAS d'enregistrement audio (trop risqué via navigateur). Il sert à traiter et payer.
+
+Supabase : Contient TOUTE la logique de validation de données (via RLS et Triggers). Ne jamais faire confiance au frontend pour les calculs de prix.
+
+2. Flux de Paiement (Web-Driven)
+
+Mobile : Le bouton "Upgrade" ouvre https://app.sitevoice.ai/dashboard/billing via url_launcher.
+
+Web : Gère l'intégration Stripe Checkout, les Webhooks et les factures PDF.
+
+Sync : Le Web met à jour users.subscription_status. Le Mobile écoute ce champ en Realtime pour se débloquer.
+
+3. Internationalization (Sync)
+
+Règle : Les clés de traduction doivent être identiques entre fr.arb (Flutter) et fr.json (Next-intl) pour maintenir la cohérence sémantique.
+
+4. Code Sharing (Mental Model)
+
+Tu ne peux pas partager de code (Dart vs TS).
+
+Stratégie : Si une logique fait plus de 10 lignes (ex: algorithme de pricing), elle DOIT être une Postgres Function ou une Edge Function.
+
+SCOPE FONCTIONNEL PAR PLATEFORME
+
+📱 Flutter (Technicien)
+
+Onboarding : Wizard -> Import Contacts -> Redirection Web OTO.
+
+Capture : Audio (10min max, M4A) + Photo + GPS.
+
+Sync : Queue Offline (Hive) -> Upload background.
+
+UX : Gros boutons, Haptic feedback, Dark mode forcé.
+
+💻 Next.js (Manager/Patron)
+
+Dashboard : KPIs temps réel (SWR / Supabase Realtime).
+
+Map View : Leaflet Cluster Map des interventions.
+
+Billing : Gestion CB, Factures, Plan Annuel.
+
+SEO Pages : /solutions/plombier, /solutions/electricien (Programmatic SEO).
+
+⚠️ RÈGLES CRITIQUES DE DÉVELOPPEMENT
+
+1. Règle du "Hard Cap" Audio (Mobile)
+
+Timer 10 min strict. Format M4A (AAC-LC) 16kHz Mono.
+
+2. Architecture Realtime (Anti-Timeout)
+
+Mobile : Upload -> Insert DB.
+
+Backend : Trigger -> Edge Function (IA Processing).
+
+Web & Mobile : Stream Update UI (Feedback visuel "Traitement en cours...").
+
+3. Sécurité IA (RAG)
+
+Le Prompt GPT-4o reçoit les clients et products minifiés.
+
+Seuil confiance < 90% = Flag requires_clarification.
+
+STYLE DE CODE
+
+Flutter
+
+MVVM, Widgets atomiques, pas de logique métier dans l'UI.
+
+Dossiers : lib/presentation, lib/data, lib/core.
+
+Next.js
+
+Server Components par défaut (RSC).
+
+Client Components ("use client") uniquement pour l'interactivité.
+
+Dossiers : app/, components/ui (shadcn), lib/supabase.
+
+PRIORITÉS UX
+
+Mobile : Vitesse de capture (1 clic).
+
+Web : Clarté des données (Data Viz) et fluidité du paiement.
+
+Global : Si l'utilisateur change son abonnement sur le Web, le Mobile doit se mettre à jour en < 1 seconde (Realtime).

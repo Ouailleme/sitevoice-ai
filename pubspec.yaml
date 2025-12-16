@@ -1,0 +1,124 @@
+name: sitevoice_ai
+description: "L'Assistant Vocal pour Techniciens Terrain - Voice-to-Action Reporting"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.2.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  # UI & Design
+  cupertino_icons: ^1.0.6
+  google_fonts: ^6.1.0
+  flutter_svg: ^2.0.9
+  flutter_animate: ^4.5.0
+  skeletonizer: ^1.4.2
+  introduction_screen: ^3.1.14
+  
+  # Growth & Viral
+  share_plus: ^7.2.2
+  flutter_contacts: ^1.1.7+1
+  app_links: ^6.4.0
+  
+  # Navigation & Deep Linking
+  go_router: ^14.6.2
+  
+  # Web Payments (Stripe Web-Only, NO IAP)
+  url_launcher: ^6.2.3
+  
+  # Charts & Visualization
+  fl_chart: ^0.66.2
+  syncfusion_flutter_charts: ^24.2.9
+  
+  # Maps
+  google_maps_flutter: ^2.5.3
+  google_maps_flutter_web: ^0.5.5
+  
+  # State Management
+  provider: ^6.1.1
+  
+  # Supabase Backend
+  supabase_flutter: ^2.3.4
+  
+  # Audio Recording
+  # record: ^5.0.4  # Temporairement désactivé pour résoudre problème Gradle
+  permission_handler: ^11.1.0
+  path_provider: ^2.1.1
+  
+  # GPS / Localisation
+  geolocator: ^11.0.0
+  
+  # Photos
+  image_picker: ^1.0.7
+  image: ^4.1.7
+  
+  # Signature
+  signature: ^5.4.1
+  
+  # Import / Export
+  csv: ^6.0.0
+  file_picker: ^6.1.1
+  
+  # Geofencing & Background Location
+  background_location: ^0.13.0
+  flutter_local_notifications: ^16.3.2
+  
+  # Text-to-Speech
+  flutter_tts: ^4.0.2
+  
+  # Audio Processing & VAD
+  # ffmpeg_kit_flutter_audio: ^6.0.3  # Discontinué - désactivé pour test
+  just_audio: ^0.9.36
+  
+  # ML / TensorFlow Lite (pour VAD avance)
+  # tflite_flutter: ^0.10.4  # Désactivé pour test (dépendance VAD)
+  
+  # Local Storage (Offline-First)
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  
+  # Network & API
+  http: ^1.1.2
+  dio: ^5.4.0
+  connectivity_plus: ^5.0.2
+  
+  # Utils & I18n
+  intl: ^0.18.1
+  uuid: ^4.3.3
+  shared_preferences: ^2.2.2
+  
+  # Error Tracking
+  sentry_flutter: ^7.14.0
+  
+  # Stripe Payment
+  # flutter_stripe: ^10.1.1  # Temporairement désactivé pour résoudre problème Gradle
+  
+  # JSON Serialization
+  json_annotation: ^4.8.1
+  
+  # Logging
+  logger: ^2.0.2+1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  
+  flutter_lints: ^3.0.1
+  build_runner: ^2.4.7
+  json_serializable: ^6.7.1
+  hive_generator: ^2.0.1
+
+flutter:
+  uses-material-design: true
+  generate: true  # Enable l10n generation
+  
+  # Assets
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+

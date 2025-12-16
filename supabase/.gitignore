@@ -1,0 +1,21 @@
+# Supabase Local Development
+.branches
+.temp
+.env.local
+
+# Fichiers de debug
+*.log
+debug.sql
+
+# Fichiers de backup
+*.backup
+*.bak
+
+# Données de test (ne pas commiter)
+test_data.sql
+seed_data.sql
+
+# Fichiers temporaires
+temp_*.sql
+scratch_*.sql
+
