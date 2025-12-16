@@ -98,6 +98,10 @@ dependencies:
   # Stripe Payment
   # flutter_stripe: ^10.1.1  # Temporairement désactivé pour résoudre problème Gradle
   
+  # PDF Generation
+  pdf: ^3.10.7
+  printing: ^5.12.0
+  
   # JSON Serialization
   json_annotation: ^4.8.1
   
