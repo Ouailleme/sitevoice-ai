@@ -141,7 +141,14 @@ class _JobsListScreenState extends State<JobsListScreen> {
             ),
             const SizedBox(height: 24),
             ElevatedButton.icon(
-              onPressed: () => context.push('/home/record'),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const RecordScreen(),
+                  ),
+                );
+              },
               icon: const Icon(Icons.mic),
               label: const Text('Commencer'),
               style: ElevatedButton.styleFrom(
@@ -171,7 +178,7 @@ class _JobsListScreenState extends State<JobsListScreen> {
 
   Widget _buildJobCard(Map<String, dynamic> job) {
     final status = _getJobStatus(job);
-    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'fr_FR');
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     final jobId = job['id'] as String;
     final clientName = job['client_name'] as String?;
     final address = job['address'] as String?;
