@@ -1,5 +1,5 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../../core/errors/app_exception.dart' hide AuthException;
+import '../../core/errors/app_exception.dart';
 import '../models/user_model.dart';
 import 'telemetry_service.dart';
 
@@ -30,10 +30,15 @@ class AuthService {
     try {
       TelemetryService.logInfo('Tentative d\'inscription: $email');
 
-      // Créer le compte utilisateur
+      // Créer le compte utilisateur avec metadata
+      // Le trigger SQL créera automatiquement company + profil
       final authResponse = await _supabase.auth.signUp(
         email: email,
         password: password,
+        data: {
+          'full_name': fullName,
+          'company_name': companyName,
+        },
       );
 
       if (authResponse.user == null) {
@@ -42,38 +47,41 @@ class AuthService {
         );
       }
 
-      final userId = authResponse.user!.id;
+      TelemetryService.logInfo('Compte auth créé, attente du trigger...');
 
-      // Créer l'entreprise
-      final companyResponse = await _supabase
-          .from('companies')
-          .insert({
-            'name': companyName,
-            'subscription_status': 'trial',
-          })
-          .select()
-          .single();
+      // Attendre un peu que le trigger crée le profil
+      await Future.delayed(const Duration(milliseconds: 500));
 
-      final companyId = companyResponse['id'];
+      // Récupérer le profil créé par le trigger
+      try {
+        final userProfile = await _supabase
+            .from('users')
+            .select('*, companies(*)')
+            .eq('id', authResponse.user!.id)
+            .single();
 
-      // Créer le profil utilisateur
-      final userProfile = await _supabase
-          .from('users')
-          .insert({
-            'id': userId,
-            'email': email,
-            'full_name': fullName,
-            'role': 'admin', // Premier utilisateur = admin
-            'company_id': companyId,
-          })
-          .select()
-          .single();
+        TelemetryService.logInfo('Inscription réussie: $email');
+        return UserModel.fromJson(userProfile);
+      } catch (profileError) {
+        // Si le profil n'existe pas encore, attendre encore un peu
+        TelemetryService.logInfo('Profil pas encore créé, nouvelle tentative...');
+        await Future.delayed(const Duration(milliseconds: 1000));
+        
+        final userProfile = await _supabase
+            .from('users')
+            .select('*, companies(*)')
+            .eq('id', authResponse.user!.id)
+            .single();
 
-      TelemetryService.logInfo('Inscription réussie: $email');
-
-      return UserModel.fromJson(userProfile);
-    } on AuthException {
-      rethrow;
+        TelemetryService.logInfo('Inscription réussie (2ème tentative): $email');
+        return UserModel.fromJson(userProfile);
+      }
+    } on AuthException catch (e) {
+      TelemetryService.logError('Erreur d\'authentification', e);
+      throw AppAuthException(
+        message: _getAuthErrorMessage(e),
+        originalError: e,
+      );
     } catch (e, stackTrace) {
       TelemetryService.logError('Erreur inscription', e, stackTrace);
       throw AppAuthException(
@@ -81,6 +89,23 @@ class AuthService {
         originalError: e,
       );
     }
+  }
+
+  /// Convertir les erreurs Supabase en messages clairs
+  String _getAuthErrorMessage(AuthException e) {
+    final message = e.message.toLowerCase();
+    
+    if (message.contains('already') || message.contains('exists')) {
+      return 'Un compte existe déjà avec cet email';
+    } else if (message.contains('invalid') && message.contains('email')) {
+      return 'Adresse email invalide';
+    } else if (message.contains('password')) {
+      return 'Le mot de passe doit contenir au moins 6 caractères';
+    } else if (message.contains('weak')) {
+      return 'Mot de passe trop faible';
+    }
+    
+    return 'Erreur d\'authentification: ${e.message}';
   }
 
   // =====================================================
