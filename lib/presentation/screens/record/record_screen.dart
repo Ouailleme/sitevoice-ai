@@ -360,23 +360,63 @@ class _RecordScreenContent extends StatelessWidget {
             const Text('Enregistré !'),
           ],
         ),
-        content: const Text(
-          'Votre rapport a été enregistré. Il sera traité automatiquement dès que possible.',
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Votre rapport vocal a été enregistré avec succès.',
+              style: TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: ThemeConstants.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: ThemeConstants.primaryColor.withOpacity(0.3),
+                ),
+              ),
+              child: Row(
+                children: [
+                  Icon(
+                    Icons.cloud_upload,
+                    color: ThemeConstants.primaryColor,
+                    size: 24,
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Le rapport sera synchronisé et traité par l\'IA dès que possible.',
+                      style: TextStyle(
+                        color: ThemeConstants.primaryColor,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
         actions: [
           TextButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.go(AppRouter.home);
+              context.read<RecordViewModel>().resetForNewRecording();
             },
-            child: const Text('Retour'),
+            child: const Text('Nouvel enregistrement'),
           ),
           ElevatedButton(
             onPressed: () {
               Navigator.of(dialogContext).pop();
-              context.go('${AppRouter.jobValidation}/$jobId');
+              context.go(AppRouter.home);
             },
-            child: const Text('Voir le détail'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ThemeConstants.successColor,
+            ),
+            child: const Text('Retour à l\'accueil'),
           ),
         ],
       ),
