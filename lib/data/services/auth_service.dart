@@ -118,20 +118,25 @@ class AuthService {
     required String password,
   }) async {
     try {
-      TelemetryService.logInfo('Tentative de connexion: $email');
+      TelemetryService.logInfo('🔐 Tentative de connexion: $email');
 
       final response = await _supabase.auth.signInWithPassword(
         email: email,
         password: password,
       );
 
+      TelemetryService.logInfo('✅ Auth response reçu');
+      TelemetryService.logInfo('   User ID: ${response.user?.id}');
+      TelemetryService.logInfo('   Email: ${response.user?.email}');
+
       if (response.user == null) {
+        TelemetryService.logError('❌ Auth response.user est NULL', null);
         throw AppAuthException(
-          message: 'Identifiants incorrects',
+          message: 'Identifiants incorrects (user null)',
         );
       }
 
-      TelemetryService.logInfo('Authentification réussie, récupération du profil...');
+      TelemetryService.logInfo('🔍 Récupération du profil utilisateur...');
 
       // Récupérer le profil utilisateur
       try {
@@ -141,11 +146,14 @@ class AuthService {
             .eq('id', response.user!.id)
             .single();
 
-        TelemetryService.logInfo('Connexion réussie: $email');
+        TelemetryService.logInfo('✅ Profil récupéré avec succès');
+        TelemetryService.logInfo('   Nom: ${userProfile['full_name']}');
+        TelemetryService.logInfo('   Role: ${userProfile['role']}');
+        
         return UserModel.fromJson(userProfile);
       } catch (profileError) {
         // Si le profil n'existe pas, créer un profil minimal
-        TelemetryService.logError('Profil introuvable, création d\'un profil minimal', profileError);
+        TelemetryService.logError('⚠️ Profil introuvable, création profil minimal', profileError);
         
         final now = DateTime.now();
         return UserModel(
@@ -159,16 +167,21 @@ class AuthService {
         );
       }
     } on AuthException catch (e) {
-      TelemetryService.logError('Erreur d\'authentification', e);
+      // AFFICHER L'ERREUR RÉELLE POUR LE DEBUG
+      TelemetryService.logError('❌ AuthException détectée', e);
+      TelemetryService.logError('   Message: ${e.message}', null);
+      TelemetryService.logError('   StatusCode: ${e.statusCode}', null);
+      
+      // Throw avec l'erreur RÉELLE (pas un message générique)
       throw AppAuthException(
-        message: 'Email ou mot de passe incorrect',
+        message: 'Erreur Supabase: ${e.message}',
         originalError: e,
       );
     } catch (e, stackTrace) {
-      TelemetryService.logError('Erreur connexion', e, stackTrace);
+      TelemetryService.logError('❌ Erreur inattendue lors de la connexion', e, stackTrace);
       
       throw AppAuthException(
-        message: 'Impossible de se connecter: ${e.toString()}',
+        message: 'Erreur: ${e.toString()}',
         originalError: e,
       );
     }
