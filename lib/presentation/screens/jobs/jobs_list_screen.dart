@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import '../../../data/services/telemetry_service.dart';
+
+import '../../../core/routes/app_router.dart';
+import '../../../data/repositories/job_repository.dart';
+import 'job_detail_screen.dart';
 
 class JobsListScreen extends StatefulWidget {
   const JobsListScreen({super.key});
@@ -11,11 +14,8 @@ class JobsListScreen extends StatefulWidget {
 }
 
 class _JobsListScreenState extends State<JobsListScreen> {
-  final _supabase = Supabase.instance.client;
-  final _searchController = TextEditingController();
-  
+  final JobRepository _jobRepository = JobRepository();
   List<Map<String, dynamic>> _jobs = [];
-  List<Map<String, dynamic>> _filteredJobs = [];
   bool _isLoading = true;
   String? _errorMessage;
 
@@ -23,28 +23,6 @@ class _JobsListScreenState extends State<JobsListScreen> {
   void initState() {
     super.initState();
     _loadJobs();
-    _searchController.addListener(_filterJobs);
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  void _filterJobs() {
-    final query = _searchController.text.toLowerCase();
-    setState(() {
-      if (query.isEmpty) {
-        _filteredJobs = _jobs;
-      } else {
-        _filteredJobs = _jobs.where((job) {
-          final status = job['status']?.toString().toLowerCase() ?? '';
-          final transcription = job['transcription_text']?.toString().toLowerCase() ?? '';
-          return status.contains(query) || transcription.contains(query);
-        }).toList();
-      }
-    });
   }
 
   Future<void> _loadJobs() async {
@@ -54,298 +32,371 @@ class _JobsListScreenState extends State<JobsListScreen> {
     });
 
     try {
-      final response = await _supabase
-          .from('jobs')
-          .select()
-          .order('created_at', ascending: false);
-
+      final jobs = await _jobRepository.getAllJobs();
       setState(() {
-        _jobs = List<Map<String, dynamic>>.from(response);
-        _filteredJobs = _jobs;
+        _jobs = jobs;
         _isLoading = false;
       });
     } catch (e) {
-      TelemetryService.logError('Erreur chargement jobs', e);
       setState(() {
-        _errorMessage = 'Impossible de charger les interventions';
+        _errorMessage = 'Erreur lors du chargement des jobs: $e';
         _isLoading = false;
       });
-    }
-  }
-
-  String _getStatusLabel(String status) {
-    switch (status) {
-      case 'pending_audio':
-        return 'En attente';
-      case 'processing':
-        return 'Traitement';
-      case 'review_needed':
-        return 'À valider';
-      case 'validated':
-        return 'Validé';
-      case 'invoiced':
-        return 'Facturé';
-      default:
-        return status;
-    }
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'pending_audio':
-        return Colors.orange;
-      case 'processing':
-        return Colors.blue;
-      case 'review_needed':
-        return Colors.purple;
-      case 'validated':
-        return Colors.green;
-      case 'invoiced':
-        return Colors.teal;
-      default:
-        return Colors.grey;
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F7FA),
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: const Text(
-          'Interventions',
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
+        title: const Text('Mes Interventions'),
         backgroundColor: Colors.white,
-        foregroundColor: const Color(0xFF1A1A1A),
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: _loadJobs,
-            tooltip: 'Actualiser',
+            icon: const Icon(Icons.filter_list),
+            onPressed: () {
+              // TODO: Implémenter les filtres
+            },
           ),
         ],
       ),
-      body: Column(
-        children: [
-          // Barre de recherche
-          Container(
-            color: Colors.white,
-            padding: const EdgeInsets.all(16),
-            child: TextField(
-              controller: _searchController,
-              decoration: InputDecoration(
-                hintText: 'Rechercher une intervention...',
-                prefixIcon: const Icon(Icons.search_rounded),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear_rounded),
-                        onPressed: () {
-                          _searchController.clear();
-                        },
-                      )
-                    : null,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                filled: true,
-                fillColor: Colors.grey[100],
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => context.push('/home/record'),
+        icon: const Icon(Icons.mic),
+        label: const Text('Nouvel enregistrement'),
+        backgroundColor: Theme.of(context).primaryColor,
+      ),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    if (_errorMessage != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.red[300],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              _errorMessage!,
+              style: const TextStyle(fontSize: 16),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadJobs,
+              child: const Text('Réessayer'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_jobs.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.mic_none,
+              size: 80,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucun enregistrement',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+                color: Colors.grey[700],
               ),
             ),
-          ),
-          
-          // Liste des jobs
-          Expanded(
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : _errorMessage != null
-                    ? Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(Icons.error_outline,
-                                size: 64, color: Colors.red),
-                            const SizedBox(height: 16),
-                            Text(_errorMessage!),
-                            const SizedBox(height: 16),
-                            ElevatedButton(
-                              onPressed: _loadJobs,
-                              child: const Text('Réessayer'),
-                            ),
-                          ],
+            const SizedBox(height: 8),
+            Text(
+              'Créez votre premier rapport vocal',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: () => context.push('/home/record'),
+              icon: const Icon(Icons.mic),
+              label: const Text('Commencer'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadJobs,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(16),
+        itemCount: _jobs.length,
+        itemBuilder: (context, index) {
+          final job = _jobs[index];
+          return _buildJobCard(job);
+        },
+      ),
+    );
+  }
+
+  Widget _buildJobCard(Map<String, dynamic> job) {
+    final status = _getJobStatus(job);
+    final dateFormat = DateFormat('dd MMM yyyy, HH:mm', 'fr_FR');
+    final jobId = job['id'] as String;
+    final clientName = job['client_name'] as String?;
+    final address = job['address'] as String?;
+    final products = job['products'] as List?;
+    final confidenceScore = job['confidence_score'] as int?;
+    final createdAtStr = job['created_at'] as String;
+    final createdAt = DateTime.parse(createdAtStr);
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => JobDetailScreen(jobId: jobId),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // En-tête avec statut
+              Row(
+                children: [
+                  _buildStatusBadge(status),
+                  const Spacer(),
+                  if (confidenceScore != null) ...[
+                    Icon(
+                      Icons.psychology,
+                      size: 16,
+                      color: _getConfidenceColor(confidenceScore.toDouble()),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$confidenceScore%',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: _getConfidenceColor(confidenceScore.toDouble()),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              const SizedBox(height: 12),
+              
+              // Client
+              if (clientName != null && clientName.isNotEmpty)
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.person_outline,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        clientName,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
                         ),
-                      )
-                    : _filteredJobs.isEmpty
-                        ? Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  _searchController.text.isEmpty
-                                      ? Icons.work_outline
-                                      : Icons.search_off_rounded,
-                                  size: 64,
-                                  color: Colors.grey[400],
-                                ),
-                                const SizedBox(height: 16),
-                                Text(
-                                  _searchController.text.isEmpty
-                                      ? 'Aucune intervention'
-                                      : 'Aucun résultat',
-                                  style: TextStyle(
-                                    fontSize: 18,
-                                    color: Colors.grey[600],
-                                  ),
-                                ),
-                                if (_searchController.text.isEmpty) ...[
-                                  const SizedBox(height: 8),
-                                  Text(
-                                    'Enregistrez votre premier rapport vocal',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.grey[500],
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          )
-                        : RefreshIndicator(
-                            onRefresh: _loadJobs,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.all(16),
-                              itemCount: _filteredJobs.length,
-                              itemBuilder: (context, index) {
-                                final job = _filteredJobs[index];
-                                return _buildJobCard(job);
-                              },
-                            ),
-                          ),
+                      ),
+                    ),
+                  ],
+                ),
+              
+              if (clientName != null && clientName.isNotEmpty) const SizedBox(height: 8),
+              
+              // Adresse
+              if (address != null && address.isNotEmpty)
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.location_on_outlined,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        address,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              
+              if (address != null && address.isNotEmpty) const SizedBox(height: 8),
+              
+              // Produits
+              if (products != null && products.isNotEmpty)
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.build_outlined,
+                      size: 18,
+                      color: Colors.grey,
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '${products.length} produit(s)',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              
+              const SizedBox(height: 12),
+              
+              // Date
+              Row(
+                children: [
+                  Icon(
+                    Icons.access_time,
+                    size: 14,
+                    color: Colors.grey[600],
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    dateFormat.format(createdAt),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    IconData icon;
+    String label;
+
+    switch (status) {
+      case 'pending':
+        color = Colors.orange;
+        icon = Icons.hourglass_empty;
+        label = 'En attente';
+        break;
+      case 'processing':
+        color = Colors.blue;
+        icon = Icons.sync;
+        label = 'Traitement...';
+        break;
+      case 'completed':
+        color = Colors.green;
+        icon = Icons.check_circle;
+        label = 'Traité';
+        break;
+      case 'error':
+        color = Colors.red;
+        icon = Icons.error;
+        label = 'Erreur';
+        break;
+      default:
+        color = Colors.grey;
+        icon = Icons.help_outline;
+        label = 'Inconnu';
+    }
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withOpacity(0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: color),
+          const SizedBox(width: 6),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildJobCard(Map<String, dynamic> job) {
-    final status = job['status'] ?? 'pending_audio';
-    final statusColor = _getStatusColor(status);
-    final statusLabel = _getStatusLabel(status);
-    final createdAt = DateTime.parse(job['created_at']);
-    final formattedDate = DateFormat('dd/MM/yyyy HH:mm').format(createdAt);
+  String _getJobStatus(Map<String, dynamic> job) {
+    final isSynced = job['is_synced'] as bool? ?? false;
+    final status = job['status'] as String?;
+    final confidenceScore = job['confidence_score'] as int?;
     
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(16),
-          onTap: () {
-            // TODO: Ouvrir les détails du job
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    // Statut
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: statusColor.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: statusColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            statusLabel,
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: statusColor,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                  ],
-                ),
-                
-                if (job['transcription_text'] != null) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    job['transcription_text'],
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[800],
-                    ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ],
-                
-                if (job['total_amount'] != null) ...[
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Total: ${job['total_amount']}€',
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF1A1A1A),
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
+    if (status == 'error') {
+      return 'error';
+    }
+    
+    if (isSynced) {
+      if (confidenceScore != null) {
+        return 'completed';
+      }
+      return 'processing';
+    }
+    return 'pending';
+  }
+
+  Color _getConfidenceColor(double confidence) {
+    if (confidence >= 80) {
+      return Colors.green;
+    } else if (confidence >= 60) {
+      return Colors.orange;
+    } else {
+      return Colors.red;
+    }
   }
 }
