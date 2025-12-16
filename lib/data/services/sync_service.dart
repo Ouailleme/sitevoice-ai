@@ -318,7 +318,33 @@ class SyncService {
           }
         }
 
+        // Créer le job dans Supabase
         await _supabase.from('jobs').insert(item.payload);
+        
+        // Appeler l'Edge Function pour le traitement IA (asynchrone côté serveur)
+        try {
+          TelemetryService.logInfo('Appel Edge Function pour traitement IA job ${item.entityId}');
+          final response = await _supabase.functions.invoke(
+            'process-audio-job',
+            body: {'jobId': item.entityId},
+          );
+          
+          if (response.status == 200) {
+            TelemetryService.logInfo('Edge Function appelée avec succès pour job ${item.entityId}');
+          } else {
+            TelemetryService.logWarning(
+              'Edge Function erreur (code ${response.status}): ${response.data}',
+            );
+          }
+        } catch (edgeFunctionError, stack) {
+          // Ne pas bloquer la sync si l'Edge Function échoue
+          // Le job sera traité manuellement ou lors d'une prochaine tentative
+          TelemetryService.logError(
+            'Erreur appel Edge Function pour job ${item.entityId}',
+            edgeFunctionError,
+            stack,
+          );
+        }
         break;
 
       case 'update':
