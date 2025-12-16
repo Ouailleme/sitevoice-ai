@@ -164,6 +164,11 @@ class SyncService {
     required Map<String, dynamic> payload,
   }) async {
     try {
+      // Initialiser si pas encore fait (lazy initialization)
+      if (!_isInitialized) {
+        await initialize();
+      }
+
       final queueItem = SyncQueueItem(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         entityType: entityType,
