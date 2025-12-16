@@ -1,391 +1,240 @@
-# 🎙️ **SiteVoice AI**
+# 🎤 SiteVoice AI
 
-Application mobile Flutter pour techniciens BTP permettant la création de rapports d'intervention et de factures par commande vocale.
+[![Build APK](https://github.com/Ouailleme/sitevoice-ai/actions/workflows/build-apk.yml/badge.svg)](https://github.com/Ouailleme/sitevoice-ai/actions/workflows/build-apk.yml)
 
-<div align="center">
-
-![Flutter](https://img.shields.io/badge/Flutter-3.0+-02569B?logo=flutter)
-![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-3ECF8E?logo=supabase)
-![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4-412991?logo=openai)
-
-</div>
+**L'Assistant Vocal pour Techniciens Terrain** - Voice-to-Action Reporting
 
 ---
 
-## 📋 **Table des Matières**
+## 🎯 **Description**
 
-- [Fonctionnalités](#-fonctionnalités)
-- [Technologies](#-technologies)
-- [Architecture](#-architecture)
-- [Installation](#-installation)
-- [Configuration](#-configuration)
-- [Développement](#-développement)
-- [Base de Données](#-base-de-données)
-- [Documentation](#-documentation)
+App mobile Flutter pour techniciens BTP. Enregistrement vocal → Transcription → Extraction Données (JSON) → Facturation automatique.
 
----
-
-## ✨ **Fonctionnalités**
-
-### **Déjà Implémenté** ✅
-
-- 🔐 **Authentification** (Signup / Login via Supabase)
-- 👥 **Gestion des Clients** (CRUD complet avec recherche)
-- 📦 **Gestion des Produits** (CRUD complet avec recherche)
-- 📋 **Gestion des Jobs** (Liste des interventions)
-- 🏠 **Dashboard Moderne** (Statistiques en temps réel)
-- 📱 **Bottom Navigation** (Navigation fluide entre sections)
-- 🎨 **Material 3 Design** (UI moderne et cohérente)
-- 🔍 **Recherche en Temps Réel** (Clients et Produits)
-- 🔄 **Pull-to-Refresh** (Actualisation des données)
-- 🔒 **Row Level Security** (Isolation des données par entreprise)
-
-### **À Venir** 🚧
-
-- 🎤 **Enregistrement Audio** (Commandes vocales)
-- 🗣️ **Transcription Whisper** (Speech-to-Text)
-- 🤖 **Extraction IA GPT-4** (Données structurées depuis vocal)
-- 📄 **Génération PDF** (Factures et devis)
-- 📴 **Mode Offline** (Hive + Queue de synchronisation)
-- 💳 **Stripe Integration** (Abonnements SaaS)
-- 📊 **Analytics** (Sentry + Statistiques avancées)
+### **Stack Technique**
+- **Frontend** : Flutter (Dernière version stable)
+- **Backend** : Supabase (Postgres, Edge Functions, Storage, Auth)
+- **IA** : OpenAI (Whisper, GPT-4o)
+- **State** : Provider
+- **Storage** : Hive (Offline-First)
 
 ---
 
-## 🛠️ **Technologies**
+## 🚀 **Quick Start**
 
-### **Frontend**
-- **Flutter 3.x** - Framework mobile cross-platform
-- **Provider** - State management
-- **GoRouter** - Navigation déclarative
-- **Google Fonts** - Typographie (Inter)
-- **Supabase Flutter** - Client Supabase
+### **1. Télécharger l'APK**
 
-### **Backend**
-- **Supabase** - Backend-as-a-Service
-  - PostgreSQL - Base de données
-  - Row Level Security - Sécurité au niveau des lignes
-  - Realtime - Mises à jour en temps réel
-  - Storage - Stockage fichiers audio
-  - Edge Functions - Serverless functions
+Deux options :
 
-### **IA**
-- **OpenAI Whisper** - Transcription audio
-- **OpenAI GPT-4** - Extraction de données structurées
-- **JSON Mode** - Sorties strictement structurées
+#### **Option A : GitHub Actions** (Recommandé)
+1. Va sur [Actions](https://github.com/Ouailleme/sitevoice-ai/actions)
+2. Clique sur le dernier workflow ✅
+3. Scroll en bas → Section "Artifacts"
+4. Télécharge `app-debug` ou `app-release`
 
-### **Storage Local**
-- **Hive** - Base de données locale NoSQL
-- **Offline-First** - Synchronisation différée
-
----
-
-## 🏗️ **Architecture**
-
-### **MVVM Strict**
-
-```
-lib/
-├── core/
-│   ├── constants/          # Constantes globales
-│   ├── routes/            # Configuration routing
-│   ├── theme/             # Thème Material 3
-│   ├── animations/        # Widgets animés
-│   └── services/          # Services transversaux
-├── data/
-│   ├── models/            # Data models (JSON serializable)
-│   ├── repositories/      # Accès données (API + Local)
-│   └── services/          # Services techniques (Auth, Audio, Sync)
-├── domain/
-│   ├── entities/          # Business entities
-│   └── use_cases/         # Business logic
-└── presentation/
-    ├── screens/           # Pages de l'app
-    ├── widgets/           # Composants réutilisables
-    └── view_models/       # ViewModels (Provider)
-```
-
-### **Principes**
-
-- ✅ **Offline-First** : L'app fonctionne sans connexion
-- ✅ **RLS** : Données isolées par entreprise
-- ✅ **Error Handling** : Try/catch partout + Telemetry
-- ✅ **Type Safety** : Pas de `dynamic` sauf exception
-- ✅ **Clean Code** : Variables explicites, commentaires en français
-
----
-
-## 🚀 **Installation**
-
-### **Prérequis**
-
-- Flutter SDK 3.0+
-- Android Studio / Xcode
-- Git
-- Compte Supabase
-- Compte OpenAI (API Key)
-
-### **1. Cloner le Projet**
-
-```bash
-git clone https://github.com/ton-username/sitevoice-ai.git
-cd sitevoice-ai
-```
-
-### **2. Installer les Dépendances**
-
+#### **Option B : Build Local** (Nécessite Linux/Mac ou WSL)
 ```bash
 flutter pub get
+flutter build apk --debug
+```
+
+### **2. Installer**
+
+```bash
+adb install app-debug.apk
 ```
 
 ### **3. Configurer Supabase**
 
-1. Créer un projet sur [supabase.com](https://supabase.com)
-2. Copier l'URL et la clé anonyme
-3. Exécuter les migrations :
-   - `supabase/migrations/001_initial_schema.sql`
-   - `supabase/migrations/002_rls_policies.sql`
+Crée un projet sur [supabase.com](https://supabase.com) et :
 
-### **4. Configurer les Variables d'Environnement**
+1. **Exécute les migrations** :
+   ```bash
+   # Dans le SQL Editor de Supabase
+   supabase/migrations/001_initial_schema.sql
+   supabase/migrations/002_rls_policies.sql
+   ```
 
-```dart
-// lib/core/constants/app_constants.dart
-static const String supabaseUrl = 'TON_URL_SUPABASE';
-static const String supabaseAnonKey = 'TA_CLE_ANON_SUPABASE';
-static const String openaiApiKey = 'TA_CLE_OPENAI';
-```
+2. **Crée le bucket Storage** :
+   ```sql
+   INSERT INTO storage.buckets (id, name, public)
+   VALUES ('audio-recordings', 'audio-recordings', false);
+   ```
 
-⚠️ **En production**, utiliser des variables d'environnement sécurisées.
+3. **Configure les variables** :
+   - Copie `SUPABASE_URL` et `SUPABASE_ANON_KEY`
+   - Mets-les dans `lib/core/constants/app_constants.dart`
 
-### **5. Lancer l'App**
+---
 
+## 📱 **Features**
+
+### **✅ Implémentées**
+
+- [x] 🔐 Authentification (Email/Password)
+- [x] 👥 Gestion Clients (CRUD)
+- [x] 📦 Gestion Produits (CRUD)
+- [x] 📋 Gestion Jobs (Liste)
+- [x] 🏠 Dashboard avec statistiques
+- [x] 🔍 Recherche en temps réel
+- [x] 🎨 UI Material 3 moderne
+- [x] 📱 Bottom Navigation
+- [x] 🌐 Multi-langue (FR, EN, ES)
+- [x] 🎤 Services Audio (flutter_sound)
+- [x] ☁️ Services Storage (Supabase)
+- [x] 🤖 Services IA (Whisper + GPT-4)
+
+### **🚧 En Cours - v1.1.0**
+
+- [ ] 🎤 Enregistrement vocal complet
+- [ ] 📤 Upload audio vers Supabase
+- [ ] 🗣️ Transcription avec Whisper
+- [ ] 🧠 Extraction données avec GPT-4
+- [ ] ✅ Page validation job
+
+### **📋 Roadmap - v1.2.0+**
+
+- [ ] 📴 Mode Offline (Hive)
+- [ ] 🔄 Synchronisation auto
+- [ ] 📄 Génération PDF factures
+- [ ] 📸 Photos & Signature
+- [ ] 📍 Géolocalisation
+- [ ] 🔔 Notifications push
+- [ ] 📊 Analytics avancées
+
+Voir [`ROADMAP.md`](ROADMAP.md) pour le plan complet.
+
+---
+
+## 🏗️ **Build & Déploiement**
+
+### **GitHub Actions** (Automatique)
+
+Chaque push vers `main` déclenche un build automatique :
+
+1. ✅ Compile APK Debug + Release
+2. ✅ Upload vers Artifacts
+3. ✅ Disponible en téléchargement
+
+Voir [`GITHUB_ACTIONS_GUIDE.md`](GITHUB_ACTIONS_GUIDE.md)
+
+### **Build Local**
+
+**⚠️ Windows** : Problème JDK connu ([voir SOLUTION_FINALE_JLINK.md](SOLUTION_FINALE_JLINK.md))
+
+**✅ Linux/Mac** :
 ```bash
-# Android
-flutter run
-
-# iOS
-flutter run -d ios
-
-# Build APK
 flutter build apk --release
 ```
 
----
-
-## ⚙️ **Configuration**
-
-### **Supabase**
-
-Voir [supabase/README.md](supabase/README.md) pour :
-- Configuration de la base de données
-- Migrations
-- RLS Policies
-- Health checks
-
-### **OpenAI**
-
-```dart
-// lib/data/services/openai_service.dart
-static const String model = 'gpt-4o';
-static const String whisperModel = 'whisper-1';
-```
-
----
-
-## 💻 **Développement**
-
-### **Structure des Commits**
-
-Suivre [GIT_WORKFLOW.md](GIT_WORKFLOW.md) :
-
+**✅ WSL2** :
 ```bash
-feat(clients): ajout recherche par téléphone
-fix(auth): correction redirect après signup
-db(supabase): ajout colonnes d'audit
-```
-
-### **Scripts Utiles**
-
-```powershell
-# Build et installer l'APK
-.\scripts\build-and-install.ps1
-
-# Commit rapide avec convention
-.\scripts\quick-commit.ps1
-```
-
-### **Commandes Flutter**
-
-```bash
-# Analyser le code
-flutter analyze
-
-# Formater le code
-flutter format .
-
-# Tester
-flutter test
-
-# Build APK debug
-flutter build apk --debug
-
-# Build APK release
+wsl --install
 flutter build apk --release
-```
-
----
-
-## 🗄️ **Base de Données**
-
-### **Tables Principales**
-
-| Table | Description |
-|-------|-------------|
-| `companies` | Entreprises clientes (SaaS multi-tenant) |
-| `users` | Utilisateurs/Techniciens |
-| `clients` | Carnet d'adresses clients |
-| `products` | Catalogue produits/services |
-| `jobs` | Interventions/Chantiers |
-| `job_items` | Lignes de facturation |
-
-### **Migrations**
-
-```bash
-# Voir la liste des migrations
-cat supabase/migrations/README.md
-
-# Créer une nouvelle migration
-cp supabase/migrations/TEMPLATE.sql supabase/migrations/003_ma_migration.sql
-
-# Appliquer via SQL Editor Supabase
-```
-
-### **Health Check**
-
-```sql
--- Exécuter dans SQL Editor
--- Fichier: supabase/health_check.sql
 ```
 
 ---
 
 ## 📚 **Documentation**
 
-### **Guides**
-
-- 📖 [Bonnes Pratiques Supabase](BEST_PRACTICES_SUPABASE.md)
-- 🔄 [Workflow Git](GIT_WORKFLOW.md)
-- 🗄️ [Documentation Supabase](supabase/README.md)
-- 📁 [Guide des Migrations](supabase/migrations/README.md)
-
-### **Architecture**
-
-- 🏗️ [Architecture MVVM](.cursorrules)
-- 🎨 [Thème Material 3](lib/core/theme/app_theme.dart)
-- 🔐 [Authentification](lib/data/services/auth_service.dart)
-
-### **Ressources Externes**
-
-- [Documentation Flutter](https://docs.flutter.dev/)
-- [Documentation Supabase](https://supabase.com/docs)
-- [Documentation OpenAI](https://platform.openai.com/docs)
+| Document | Description |
+|----------|-------------|
+| [`ROADMAP.md`](ROADMAP.md) | Plan des 18 features (v1.1.0 → v2.0.0) |
+| [`IMPLEMENTATION_GUIDE.md`](IMPLEMENTATION_GUIDE.md) | Guide pas à pas Audio & IA |
+| [`AUDIO_IMPLEMENTATION_STATUS.md`](AUDIO_IMPLEMENTATION_STATUS.md) | État actuel implémentation (80%) |
+| [`GITHUB_ACTIONS_GUIDE.md`](GITHUB_ACTIONS_GUIDE.md) | Build automatique avec CI/CD |
+| [`SOLUTION_FINALE_JLINK.md`](SOLUTION_FINALE_JLINK.md) | 5 solutions problème Windows build |
+| [`GIT_WORKFLOW.md`](GIT_WORKFLOW.md) | Conventions Git du projet |
+| [`BEST_PRACTICES_SUPABASE.md`](BEST_PRACTICES_SUPABASE.md) | Bonnes pratiques Supabase |
 
 ---
 
-## 🧪 **Tests**
+## 🗂️ **Structure du Projet**
 
-```bash
-# Lancer tous les tests
-flutter test
+```
+lib/
+├── core/
+│   ├── constants/          # Constantes globales
+│   ├── errors/             # Custom exceptions
+│   ├── routes/             # Navigation (go_router)
+│   └── theme/              # Material 3 theme
+├── data/
+│   ├── models/             # Data models
+│   ├── repositories/       # Accès données
+│   └── services/           # Services (Auth, Audio, Storage, OpenAI)
+├── presentation/
+│   ├── screens/            # Pages de l'app
+│   ├── widgets/            # Composants réutilisables
+│   └── view_models/        # ViewModels (Provider)
+└── main.dart
 
-# Tests unitaires
-flutter test test/unit/
+supabase/
+├── migrations/             # Migrations SQL versionnées
+├── functions/              # Edge Functions
+└── *.sql                   # Scripts de maintenance
 
-# Tests d'intégration
-flutter test test/integration/
-
-# Coverage
-flutter test --coverage
+.github/
+└── workflows/
+    └── build-apk.yml       # CI/CD GitHub Actions
 ```
 
 ---
 
-## 🚀 **Déploiement**
+## 🤝 **Contribution**
 
-### **Android (Google Play)**
-
-```bash
-# Build AAB (Android App Bundle)
-flutter build appbundle --release
-
-# Upload sur Google Play Console
-```
-
-### **iOS (App Store)**
+### **Workflow**
 
 ```bash
-# Build IPA
-flutter build ipa --release
+# 1. Fork le projet
+# 2. Crée une branche
+git checkout -b feature/ma-feature
 
-# Upload via Xcode ou Transporter
+# 3. Commit
+git commit -m "feat(scope): description"
+
+# 4. Push
+git push origin feature/ma-feature
+
+# 5. Crée une Pull Request
 ```
 
----
+### **Conventions**
 
-## 📝 **Changelog**
-
-Voir [CHANGELOG.md](CHANGELOG.md) pour l'historique des versions.
-
----
-
-## 📄 **Licence**
-
-Ce projet est sous licence privée. Tous droits réservés.
+- **Commits** : `type(scope): message` (voir [`GIT_WORKFLOW.md`](GIT_WORKFLOW.md))
+- **Code** : Flutter best practices + Architecture MVVM
+- **Tests** : Tests unitaires pour logique métier
 
 ---
 
-## 👥 **Équipe**
+## 📄 **License**
 
-- **Lead Developer** : [Ton Nom]
-- **UI/UX Designer** : [Nom]
-- **Backend** : Supabase
-- **IA** : OpenAI
+Propriétaire - Tous droits réservés
 
 ---
 
 ## 🆘 **Support**
 
-Pour toute question ou problème :
-
-1. 📖 Consulter la [documentation](BEST_PRACTICES_SUPABASE.md)
-2. 🐛 Ouvrir une [issue](https://github.com/ton-username/sitevoice-ai/issues)
-3. 💬 Contacter l'équipe
+- **Issues** : [GitHub Issues](https://github.com/Ouailleme/sitevoice-ai/issues)
+- **Discussions** : [GitHub Discussions](https://github.com/Ouailleme/sitevoice-ai/discussions)
+- **Email** : support@sitevoice.ai
 
 ---
 
-## ⭐ **Roadmap**
+## 📊 **Statut du Projet**
 
-### **v1.0.0** (Actuel)
-- ✅ Authentification
-- ✅ CRUD Clients/Produits/Jobs
-- ✅ Dashboard moderne
-- ✅ Recherche
+```
+✅ Authentification       : 100%
+✅ CRUD Clients           : 100%
+✅ CRUD Produits          : 100%
+✅ Liste Jobs             : 100%
+✅ Dashboard              : 100%
+✅ Services Audio/IA      : 100% (Code)
+⏳ Intégration Audio      : 30% (En attente tests)
+⏳ Mode Offline           : 0%
+⏳ Génération PDF         : 0%
 
-### **v1.1.0** (Prochain)
-- 🎤 Enregistrement audio
-- 🗣️ Transcription Whisper
-- 🤖 Extraction GPT-4
-
-### **v2.0.0** (Futur)
-- 📄 Génération PDF
-- 💳 Stripe Integration
-- 📴 Mode Offline complet
-- 📊 Analytics avancées
+TOTAL : 65%
+```
 
 ---
 
-<div align="center">
-
-**Fait avec ❤️ pour les techniciens BTP**
-
-</div>
+**🎉 Merci d'utiliser SiteVoice AI !**
