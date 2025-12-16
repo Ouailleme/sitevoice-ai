@@ -105,7 +105,7 @@ class JobRepository {
     }
   }
 
-  /// Sauvegarder un job en local (Hive)
+  /// Sauvegarder un job en local (Hive) - méthode privée
   Future<void> _saveJobLocally(String jobId, Map<String, dynamic> job) async {
     try {
       await _jobsBox.put(jobId, jsonEncode(job));
@@ -117,6 +117,11 @@ class JobRepository {
         code: 'LOCAL_SAVE_ERROR',
       );
     }
+  }
+
+  /// Sauvegarder un job en local (Hive) - méthode publique
+  Future<void> saveJobLocally(String jobId, Map<String, dynamic> job) async {
+    await _saveJobLocally(jobId, job);
   }
 
   /// Récupérer un job depuis le local

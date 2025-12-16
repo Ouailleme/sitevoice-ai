@@ -6,6 +6,7 @@ import '../../data/services/audio_service.dart';
 import '../../data/services/auth_service.dart';
 import '../../data/services/sync_service.dart';
 import '../../data/services/telemetry_service.dart';
+import '../../data/repositories/job_repository.dart';
 
 /// États possibles de l'enregistrement
 enum RecordState {
@@ -22,6 +23,7 @@ class RecordViewModel extends ChangeNotifier {
   final AudioService _audioService;
   final AuthService _authService;
   final SyncService _syncService;
+  final JobRepository _jobRepository = JobRepository();
   final Uuid _uuid = const Uuid();
 
   RecordState _state = RecordState.idle;
@@ -139,12 +141,17 @@ class RecordViewModel extends ChangeNotifier {
         'id': jobId,
         'company_id': userProfile!.companyId,
         'created_by': userId,
-        'status': 'pending_audio',
-        'audio_url': audioPath, // Chemin local pour l'instant
+        'status': 'pending_sync',
+        'audio_file_path': audioPath, // Chemin local pour l'instant
         'audio_duration_seconds': _durationSeconds,
+        'is_synced': false,
         'created_at': DateTime.now().toIso8601String(),
         'updated_at': DateTime.now().toIso8601String(),
       };
+
+      // Sauvegarder le job localement AVANT de l'ajouter à la queue
+      await _jobRepository.saveJobLocally(jobId, jobData);
+      TelemetryService.logInfo('Job sauvegardé localement: $jobId');
 
       // Ajouter à la queue de sync
       await _syncService.addToQueue(

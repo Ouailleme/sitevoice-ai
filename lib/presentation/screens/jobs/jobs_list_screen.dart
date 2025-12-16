@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/routes/app_router.dart';
 import '../../../data/repositories/job_repository.dart';
+import '../record/record_screen.dart';
 import 'job_detail_screen.dart';
 
 class JobsListScreen extends StatefulWidget {
@@ -64,7 +65,14 @@ class _JobsListScreenState extends State<JobsListScreen> {
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/home/record'),
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const RecordScreen(),
+            ),
+          );
+        },
         icon: const Icon(Icons.mic),
         label: const Text('Nouvel enregistrement'),
         backgroundColor: Theme.of(context).primaryColor,
