@@ -1,88 +1,138 @@
 import 'dart:async';
-import 'dart:io';
-import 'package:path_provider/path_provider.dart';
-import 'package:permission_handler/permission_handler.dart';
-// import 'package:record/record.dart';  // Temporairement désactivé pour compilation
-import 'package:uuid/uuid.dart';
-
-import '../../core/constants/app_constants.dart';
 import '../../core/errors/app_exception.dart';
+import 'audio_recording_service.dart';
 import 'telemetry_service.dart';
 
 /// Service de gestion de l'enregistrement audio
 /// 
-/// ⚠️ TEMPORAIREMENT DÉSACTIVÉ
-/// Le package 'record' cause des problèmes de compilation Gradle.
-/// Cette fonctionnalité sera réactivée une fois le problème résolu.
+/// Ce service fait le pont entre le ViewModel et le AudioRecordingService
+/// Il ajoute une couche de gestion du timer et de l'état
 class AudioService {
-  final Uuid _uuid = const Uuid();
+  final AudioRecordingService _recordingService = AudioRecordingService();
 
   bool _isRecording = false;
   bool _isPaused = false;
   String? _currentRecordingPath;
-  DateTime? _recordingStartTime;
   Timer? _durationTimer;
   int _recordingDurationSeconds = 0;
+
+  final _durationController = StreamController<int>.broadcast();
 
   bool get isRecording => _isRecording;
   bool get isPaused => _isPaused;
   String? get currentRecordingPath => _currentRecordingPath;
   int get recordingDurationSeconds => _recordingDurationSeconds;
 
-  Stream<int> get durationStream => Stream.value(0);
+  Stream<int> get durationStream => _durationController.stream;
+  Stream<double> get amplitudeStream => _recordingService.amplitudeStream;
 
   Future<bool> checkMicrophonePermission() async {
-    final status = await Permission.microphone.status;
-    return status.isGranted;
+    return await _recordingService.hasPermission();
   }
 
   Future<bool> requestMicrophonePermission() async {
-    final status = await Permission.microphone.request();
-    return status.isGranted;
+    return await _recordingService.requestPermission();
   }
 
   Future<void> startRecording() async {
-    throw AudioException(
-      message: 'Fonctionnalité temporairement indisponible',
-      code: 'AUDIO_DISABLED',
-    );
+    try {
+      final success = await _recordingService.startRecording();
+      if (!success) {
+        throw AudioException(
+          message: 'Impossible de démarrer l\'enregistrement',
+          code: 'RECORDING_START_FAILED',
+        );
+      }
+
+      _isRecording = true;
+      _isPaused = false;
+      _recordingDurationSeconds = 0;
+      _startDurationTimer();
+
+      TelemetryService.logInfo('Enregistrement audio démarré');
+    } catch (e) {
+      TelemetryService.logError('Erreur démarrage enregistrement', e);
+      rethrow;
+    }
   }
 
   Future<void> pauseRecording() async {
-    throw AudioException(
-      message: 'Fonctionnalité temporairement indisponible',
-      code: 'AUDIO_DISABLED',
-    );
+    try {
+      await _recordingService.pauseRecording();
+      _isPaused = true;
+      _stopDurationTimer();
+
+      TelemetryService.logInfo('Enregistrement mis en pause');
+    } catch (e) {
+      TelemetryService.logError('Erreur pause enregistrement', e);
+      rethrow;
+    }
   }
 
   Future<void> resumeRecording() async {
-    throw AudioException(
-      message: 'Fonctionnalité temporairement indisponible',
-      code: 'AUDIO_DISABLED',
-    );
+    try {
+      await _recordingService.resumeRecording();
+      _isPaused = false;
+      _startDurationTimer();
+
+      TelemetryService.logInfo('Enregistrement repris');
+    } catch (e) {
+      TelemetryService.logError('Erreur reprise enregistrement', e);
+      rethrow;
+    }
   }
 
   Future<String?> stopRecording() async {
-    throw AudioException(
-      message: 'Fonctionnalité temporairement indisponible',
-      code: 'AUDIO_DISABLED',
-    );
+    try {
+      final path = await _recordingService.stopRecording();
+      _isRecording = false;
+      _isPaused = false;
+      _stopDurationTimer();
+      _currentRecordingPath = path;
+
+      TelemetryService.logInfo('Enregistrement arrêté: $path');
+      return path;
+    } catch (e) {
+      TelemetryService.logError('Erreur arrêt enregistrement', e);
+      rethrow;
+    }
   }
 
   Future<void> cancelRecording() async {
-    _isRecording = false;
-    _isPaused = false;
-    _currentRecordingPath = null;
-    _recordingStartTime = null;
-    _recordingDurationSeconds = 0;
-    _durationTimer?.cancel();
+    try {
+      await _recordingService.cancelRecording();
+      _isRecording = false;
+      _isPaused = false;
+      _currentRecordingPath = null;
+      _recordingDurationSeconds = 0;
+      _stopDurationTimer();
+
+      TelemetryService.logInfo('Enregistrement annulé');
+    } catch (e) {
+      TelemetryService.logError('Erreur annulation enregistrement', e);
+      rethrow;
+    }
   }
 
   Future<bool> hasPermission() async {
-    return await checkMicrophonePermission();
+    return await _recordingService.hasPermission();
+  }
+
+  void _startDurationTimer() {
+    _durationTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      _recordingDurationSeconds++;
+      _durationController.add(_recordingDurationSeconds);
+    });
+  }
+
+  void _stopDurationTimer() {
+    _durationTimer?.cancel();
+    _durationTimer = null;
   }
 
   void dispose() {
-    _durationTimer?.cancel();
+    _stopDurationTimer();
+    _durationController.close();
+    _recordingService.dispose();
   }
 }
